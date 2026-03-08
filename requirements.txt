@@ -1,0 +1,8 @@
+customtkinter>=5.2.2
+wmi>=1.5.1
+psutil>=5.9.8
+requests>=2.32.3
+schedule>=1.2.2
+plyer>=2.1.0
+pystray>=0.19.5
+Pillow>=10.4.0
