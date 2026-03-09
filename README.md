@@ -149,3 +149,8 @@ python src/main.py
 - More robust official latest-version integrations for Intel/AMD where reliable
 - Optional exportable update-check report
 - Improved multi-device differentiation for systems with many adapters
+
+
+## Icon Handling
+
+The tray icon file is optional in this repository. If `assets/icon.ico` is missing or invalid, DriverReminder generates a fallback icon at runtime so the app does not crash.

@@ -104,15 +104,14 @@ class HardwareScanner:
 
     def _fallback_scan(self) -> ScanResult:
         cpu_text = f"CPU cores: {psutil.cpu_count(logical=True)}" if hasattr(psutil, "cpu_count") else "Unknown CPU"
-        base = CategoryScan(["Not detected"], [], "Installed version unavailable")
         by_category = {
             "BIOS / UEFI firmware": CategoryScan(["Unknown motherboard"], [], "Installed version unavailable"),
             "Graphics drivers": CategoryScan(["Unknown GPU"], [], "Installed version unavailable"),
             "CPU chipset drivers": CategoryScan([cpu_text], [], "Installed version unavailable"),
-            "WiFi drivers": base,
-            "Bluetooth drivers": base,
-            "Audio drivers": base,
-            "Storage / NVMe drivers": base,
+            "WiFi drivers": CategoryScan(["Not detected"], [], "Installed version unavailable"),
+            "Bluetooth drivers": CategoryScan(["Not detected"], [], "Installed version unavailable"),
+            "Audio drivers": CategoryScan(["Not detected"], [], "Installed version unavailable"),
+            "Storage / NVMe drivers": CategoryScan(["Not detected"], [], "Installed version unavailable"),
             "System firmware / motherboard drivers": CategoryScan(["Unknown motherboard"], [], "Installed version unavailable"),
         }
         return ScanResult(by_category=by_category, oem_vendor="Unknown")
