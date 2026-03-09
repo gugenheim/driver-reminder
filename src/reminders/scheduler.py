@@ -1,4 +1,4 @@
-"""Background reminder scheduler."""
+"""Background reminder scheduler with anti-spam behavior."""
 
 from __future__ import annotations
 
@@ -16,54 +16,62 @@ INTERVAL_DAYS = {"Daily": 1, "Weekly": 7, "Monthly": 30}
 
 
 class ReminderScheduler:
-    """Runs periodic overdue checks and emits desktop notifications."""
+    """Checks overdue categories in the background and emits notifications."""
 
-    def __init__(self, config_getter: Callable[[], dict], daemon: bool = True) -> None:
+    def __init__(self, config_getter: Callable[[], dict], on_notified: Callable[[str], None]) -> None:
         self._config_getter = config_getter
+        self._on_notified = on_notified
         self._stop_event = threading.Event()
-        self._thread = threading.Thread(target=self._run, daemon=daemon)
+        self._thread: threading.Thread | None = None
+        self._scheduler = schedule.Scheduler()
 
     def start(self) -> None:
-        schedule.clear("driver-reminder")
-        schedule.every(4).hours.do(self.check_overdue).tag("driver-reminder")
-        if not self._thread.is_alive():
+        self._stop_event.clear()
+        self._scheduler.clear()
+        self._scheduler.every(15).minutes.do(self.check_overdue)
+        if self._thread is None or not self._thread.is_alive():
             self._thread = threading.Thread(target=self._run, daemon=True)
             self._thread.start()
 
     def stop(self) -> None:
         self._stop_event.set()
-        schedule.clear("driver-reminder")
+        self._scheduler.clear()
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=2)
 
     def _run(self) -> None:
         while not self._stop_event.is_set():
-            schedule.run_pending()
+            self._scheduler.run_pending()
             time.sleep(1)
 
     def check_overdue(self) -> None:
         config = self._config_getter()
-        interval_name = config.get("reminder_interval", "Weekly")
-        threshold_days = INTERVAL_DAYS.get(interval_name, 7)
+        if config.get("reminders_paused", False):
+            return
+
+        interval_days = INTERVAL_DAYS.get(config.get("reminder_interval", "Weekly"), 7)
         now = datetime.now(timezone.utc)
 
         for category in DRIVER_CATEGORIES:
-            last_checked = config.get("last_checked", {}).get(category)
-            if not last_checked:
-                self._notify_due(category, threshold_days)
-                continue
+            last_checked = self._parse_dt(config.get("last_checked", {}).get(category))
+            last_notified = self._parse_dt(config.get("last_notified", {}).get(category))
 
-            try:
-                checked_time = datetime.fromisoformat(last_checked)
-            except ValueError:
-                self._notify_due(category, threshold_days)
-                continue
+            is_overdue = last_checked is None or (now - last_checked >= timedelta(days=interval_days))
+            can_notify = last_notified is None or (now - last_notified >= timedelta(days=1))
 
-            if now - checked_time >= timedelta(days=threshold_days):
-                days_elapsed = (now - checked_time).days
-                self._notify_due(category, days_elapsed)
+            if is_overdue and can_notify:
+                elapsed = interval_days if last_checked is None else max(1, (now - last_checked).days)
+                send_notification(
+                    "DriverReminder",
+                    f"It's been {elapsed} days since you checked {category}.",
+                )
+                self._on_notified(category)
 
     @staticmethod
-    def _notify_due(category: str, elapsed_days: int) -> None:
-        send_notification(
-            title="DriverReminder",
-            message=f"It's been {elapsed_days} days since you checked {category}.",
-        )
+    def _parse_dt(value: str | None) -> datetime | None:
+        if not value:
+            return None
+        try:
+            return datetime.fromisoformat(value)
+        except ValueError:
+            return None

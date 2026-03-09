@@ -1,12 +1,19 @@
-from src.utils.vendor_links import get_links_for_category
+from src.utils.vendor_links import resolve_best_link
 
 
-def test_vendor_link_resolution_prefers_category_link() -> None:
-    links = get_links_for_category("Graphics drivers", ["NVIDIA"])
-    assert "NVIDIA" in links
-    assert "nvidia.com" in links["NVIDIA"]
+def test_prefers_gpu_vendor_for_graphics() -> None:
+    vendor, link = resolve_best_link("Graphics drivers", ["NVIDIA", "Intel"], "Dell")
+    assert vendor == "NVIDIA"
+    assert "nvidia.com" in link
 
 
-def test_vendor_link_resolution_fallbacks_to_category_defaults() -> None:
-    links = get_links_for_category("Audio drivers", ["UnknownVendor"])
-    assert "Realtek" in links
+def test_uses_oem_for_bios_when_component_vendor_present() -> None:
+    vendor, link = resolve_best_link("BIOS / UEFI firmware", ["Intel"], "Lenovo")
+    assert vendor == "Lenovo"
+    assert "lenovo" in link.lower()
+
+
+def test_fallback_link_always_available() -> None:
+    vendor, link = resolve_best_link("Audio drivers", [], "Unknown")
+    assert vendor
+    assert link.startswith("https://")
