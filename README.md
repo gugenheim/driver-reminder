@@ -118,19 +118,16 @@ driver-reminder/
 ```
 ### Installation
 ## 1) Clone repository
-```git clone <your-repo-url>
-cd driver-reminder
-```
+```git clone <your-repo-url>```
+```cd driver-reminder```
 ## 2) Create and activate virtual environment
-```python -m venv .venv
-.venv\Scripts\activate
-```
+```python -m venv .venv```
+```.venv\Scripts\activate```
+
 ## 3) Install dependencies
-```pip install -r requirements.txt
-```
+```pip install -r requirements.txt```
 ## Run
-```python src/main.py
-```
+```python src/main.py```
 ### Usage
 
 Within the app:
