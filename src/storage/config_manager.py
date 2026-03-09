@@ -73,7 +73,7 @@ class ConfigManager:
 
     def _write(self, data: dict[str, Any]) -> None:
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
-        self.config_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        self.config_path.write_text(json.dumps(data, indent=2, sort_keys=True), encoding="utf-8")
 
     def save(self) -> None:
         self._write(self.config)

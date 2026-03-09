@@ -29,8 +29,9 @@ class DriverReminderApp(ctk.CTk):
         ctk.set_default_color_theme("blue")
 
         self.config_manager = ConfigManager()
-        if is_startup_enabled() != self.config_manager.config.get("start_with_windows", False):
-            self.config_manager.set_startup(is_startup_enabled())
+        startup_state = is_startup_enabled()
+        if startup_state != self.config_manager.config.get("start_with_windows", False):
+            self.config_manager.set_startup(startup_state)
 
         self.scanner = HardwareScanner()
         self.version_detector = VersionDetector()
